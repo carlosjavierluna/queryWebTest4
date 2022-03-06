@@ -11,6 +11,7 @@ import (
 
 // se declara una estructura para almacenar los numeros.
 type numx struct {
+	idx   int // para guardar el orden en que se van creando
 	tipo  string
 	par   int
 	impar int
@@ -19,7 +20,7 @@ type numx struct {
 func main() {
 
 	// se definen un canal bidireccional
-	canal := make(chan int)
+	canal := make(chan numx)
 	// Se declara un arreglo de estructuras
 	var numeros []numx
 
@@ -38,7 +39,7 @@ func main() {
 		go llenar_canal(canal, i)
 	}
 
-	time.Sleep(5 * time.Millisecond)          // Se pone este delay para esperar que terminen todas las go rutinas.
+	time.Sleep(15 * time.Millisecond)         // Se pone este delay para esperar que terminen todas las go rutinas.
 	fmt.Println("Despues del for: ", numeros) // se imprime el slice de numeros luego de llamar a las go rutinas.
 	texto := fmt.Sprintf("Largo del arreglo: %d Capacidad del arreglo: %d", len(numeros), cap(numeros))
 	fmt.Println(texto)
@@ -46,9 +47,11 @@ func main() {
 
 //--LLENAR CANAL -------------------------------------------
 //  Esta funcion llena el numero que le llega como parametro
-//  y lo mete dentro del canal.
-func llenar_canal(ch chan<- int, num int) {
-	ch <- num
+//  y lo mete la estructura dentro del canal.
+func llenar_canal(ch chan<- numx, i int) {
+	var x numx // Se declara la variable
+	x.idx = i  // Se llena el indice con el valor de i
+	ch <- x    //se envia al canal la variable completa
 }
 
 //--LLENAR ARREGLO -----------------------------------------
@@ -56,16 +59,22 @@ func llenar_canal(ch chan<- int, num int) {
 // y le aniade una nuevo elemento considerando si el parametro
 // que obtiene del canal  valor de (i)
 // es par o impar.
-func llenar_arreglo(x *[]numx, ch <-chan int) { // la declaracion es un puntero al un slice de numx
+func llenar_arreglo(x *[]numx, ch <-chan numx) { // la declaracion es un puntero al un slice de numx
 	//fmt.Println("Valor de i:",i)
 	for {
-		i := <-ch
+		i := <-ch // Se recupera el dato del canal
+
+		fmt.Println(i)
+
 		// Se determina si es par o impar
-		if i%2 == 0 {
-			*x = append(*x, numx{"par", 0, i})
+		if i.idx%2 == 0 {
+			i.tipo = "par"
+			i.par = i.idx
 		} else {
-			*x = append(*x, numx{"Impar", i, 0})
+			i.tipo = "Impar"
+			i.impar = i.idx
 		}
+		*x = append(*x, i)
 
 	}
 }
